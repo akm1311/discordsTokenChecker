@@ -8,6 +8,7 @@
         body { font-family: Arial, sans-serif; display: flex; flex-direction: column; align-items: center; margin-top: 50px; }
         #status { margin-top: 20px; font-weight: bold; }
         #tokenInput { width: 600px; height: 250px; }
+        .download-button { margin-top: 10px; display: none; }
     </style>
 </head>
 <body>
@@ -18,11 +19,18 @@
     <button onclick="validateTokens()">Check Tokens</button>
     
     <p id="status"></p>
+    <button id="downloadWorking" class="download-button" onclick="downloadTokens(true)">Download Working Tokens</button>
+    <button id="downloadDead" class="download-button" onclick="downloadTokens(false)">Download Dead Tokens</button>
 
     <script>
+        let workingTokens = [];
+        let deadTokens = [];
+
         async function validateTokens() {
             const tokens = document.getElementById('tokenInput').value.trim().split('\n');
             const statusElement = document.getElementById('status');
+            workingTokens = [];
+            deadTokens = [];
             let workingCount = 0;
             let deadCount = 0;
 
@@ -31,8 +39,10 @@
                 if (token.trim()) {
                     const isValid = await checkToken(token.trim());
                     if (isValid) {
+                        workingTokens.push(isValid);  // Store token with username if valid
                         workingCount++;
                     } else {
+                        deadTokens.push(token.trim());  // Store token if invalid
                         deadCount++;
                     }
                 }
@@ -40,6 +50,10 @@
 
             statusElement.innerHTML = `Working tokens: ${workingCount}<br>Dead tokens: ${deadCount}`;
             statusElement.style.color = "black";
+
+            // Show download buttons if any valid or invalid tokens were found
+            document.getElementById('downloadWorking').style.display = workingTokens.length > 0 ? 'inline-block' : 'none';
+            document.getElementById('downloadDead').style.display = deadTokens.length > 0 ? 'inline-block' : 'none';
         }
 
         async function checkToken(token) {
@@ -51,10 +65,27 @@
                     }
                 });
 
-                return response.ok;
+                if (response.ok) {
+                    const userData = await response.json();
+                    return `${token} - ${userData.username}#${userData.discriminator}`;
+                } else {
+                    return false;
+                }
             } catch (error) {
                 return false;
             }
+        }
+
+        function downloadTokens(isWorking) {
+            const data = isWorking ? workingTokens : deadTokens;
+            const fileContent = data.join('\n');
+            const blob = new Blob([fileContent], { type: "text/plain" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = isWorking ? "working_tokens.txt" : "dead_tokens.txt";
+            a.click();
+            URL.revokeObjectURL(url);
         }
     </script>
 
