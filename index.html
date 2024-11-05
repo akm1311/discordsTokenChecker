@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Discord Token Bulk Validator</title>
+    <style>
+        body { font-family: Arial, sans-serif; display: flex; flex-direction: column; align-items: center; margin-top: 50px; }
+        #status { margin-top: 20px; font-weight: bold; }
+        #tokenInput { width: 600px; height: 250px; }
+    </style>
+</head>
+<body>
+
+    <h1>Discord Token Bulk Validator</h1>
+    <textarea id="tokenInput" placeholder="Enter one token per line"></textarea>
+    <br>
+    <button onclick="validateTokens()">Check Tokens</button>
+    
+    <p id="status"></p>
+
+    <script>
+        async function validateTokens() {
+            const tokens = document.getElementById('tokenInput').value.trim().split('\n');
+            const statusElement = document.getElementById('status');
+            let workingCount = 0;
+            let deadCount = 0;
+
+            statusElement.textContent = "Checking tokens...";
+            for (const token of tokens) {
+                if (token.trim()) {
+                    const isValid = await checkToken(token.trim());
+                    if (isValid) {
+                        workingCount++;
+                    } else {
+                        deadCount++;
+                    }
+                }
+            }
+
+            statusElement.innerHTML = `Working tokens: ${workingCount}<br>Dead tokens: ${deadCount}`;
+            statusElement.style.color = "black";
+        }
+
+        async function checkToken(token) {
+            try {
+                const response = await fetch("https://discord.com/api/v9/users/@me", {
+                    method: "GET",
+                    headers: {
+                        "Authorization": token
+                    }
+                });
+
+                return response.ok;
+            } catch (error) {
+                return false;
+            }
+        }
+    </script>
+
+</body>
+</html>
